@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UNWRITTEN | True Erasable Pens</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Inter:wght@400;500&family=Caveat:wght@600&display=swap">
+<style>
+:root{--fg:#12151c;--muted:#5d6570;--line:rgba(18,21,28,.18);--bg1:#e9edf0;--bg2:#c7ced6}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--fg:#12151c;--muted:#5d6570}}
+:root[data-theme="dark"]{--fg:#12151c;--muted:#5d6570}
+*{box-sizing:border-box}
+html{background:linear-gradient(160deg,var(--bg1),var(--bg2)) fixed;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;color:var(--fg);font-family:Inter,system-ui,sans-serif;background:transparent;overflow-x:hidden}
+#stage{position:fixed;inset:0;z-index:1;pointer-events:none}
+canvas{display:block}
+.content{position:relative;z-index:2}
+section{height:100vh;position:relative}
+#write{height:300vh}
+.brand{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:clamp(2.6rem,8vw,7.5rem);letter-spacing:-.02em;line-height:.9}
+.sub{margin-top:16px;font-size:clamp(.95rem,1.4vw,1.2rem);color:var(--muted)}
+.hero-copy{position:absolute;top:14vh;left:7vw}
+.panel{position:absolute;max-width:400px;left:7vw;top:20vh}
+.panel.right{left:auto;right:7vw}
+.cap{position:fixed;left:7vw;top:14vh;max-width:340px;opacity:0;z-index:3;pointer-events:none}
+.kicker{font-size:.85rem;color:var(--muted);margin-bottom:12px}
+h2{font-family:Fraunces,Georgia,serif;font-weight:400;margin:0 0 16px;font-size:clamp(2rem,3.8vw,3.8rem);line-height:1;letter-spacing:-.02em}
+p{margin:0;color:#3a414b;line-height:1.6;font-size:1rem}
+.formula{margin-top:24px;border-top:1px solid var(--line)}
+.row{display:flex;justify-content:space-between;gap:20px;padding:11px 0;border-bottom:1px solid var(--line);font-size:.86rem}
+.row span:last-child{color:var(--muted)}
+.hint{position:absolute;bottom:6vh;left:7vw;color:var(--muted);font-size:.85rem}
+.end{display:flex;align-items:flex-end;justify-content:center;text-align:center;padding-bottom:9vh}
+.tag{margin-top:18px;font-family:Fraunces,Georgia,serif;font-size:clamp(1.1rem,2vw,1.6rem)}
+@media(max-width:800px){.panel,.panel.right,.cap{left:7vw;right:7vw;max-width:none;top:10vh}.hero-copy{top:10vh}}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div class="cap" id="c1"><div class="kicker">Write</div><h2>Flows like a real pen.</h2><p>Smooth, dark and immediate. Nothing about the line says erasable.</p></div>
+<div class="cap" id="c2"><div class="kicker">Erase</div><h2>Then it's gone.</h2><p>A plain pencil eraser lifts the film off the paper. No heat, no special tool.</p></div>
+<main class="content">
+<section><div class="hero-copy"><div class="brand">UNWRITTEN</div><div class="sub">True erasable pens</div></div><div class="hint" id="hint">Scroll to explore</div></section>
+<section><div class="panel right"><div class="kicker">The ink</div><h2>Built around a working formulation.</h2><p>Solid pigment particles ride in a liquid that evaporates after writing, leaving a cohesive film that resists smudging and can be lifted with a pencil eraser.</p>
+<div class="formula"><div class="row"><span>Carbon black pigment</span><span>8%</span></div><div class="row"><span>SDA 40-B / ethyl lactate carrier</span><span>55%</span></div><div class="row"><span>Polyvinyl butyral binder</span><span>25%</span></div><div class="row"><span>Micronized polyethylene wax</span><span>2%</span></div><div class="row"><span>Oleic acid / surfactant blend</span><span>10%</span></div></div></div></section>
+<section><div class="panel"><div class="kicker">The tip</div><h2>Precision, by design.</h2><p>A fine metal tip and ball deliver the ink evenly, giving a controlled, smooth line with the feel of a pen.</p></div></section>
+<section><div class="panel right"><div class="kicker">The grip</div><h2>Made to be held.</h2><p>A ribbed, contoured grip is shaped for comfort and control through long writing sessions.</p></div></section>
+<section id="write"></section>
+<section class="end"><div><div class="brand">UNWRITTEN</div><div class="tag">Erasable when you choose. Stable when you don't.</div></div></section>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const R=(v,a,b)=>Math.min(1,Math.max(0,(v-a)/(b-a))),E=t=>t*t*(3-2*t),L=(a,b,t)=>a+(b-a)*t,V=THREE.Vector3;
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(30,innerWidth/innerHeight,.1,100);
+const ren=new THREE.WebGLRenderer({antialias:true,alpha:true});
+ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.setSize(innerWidth,innerHeight);ren.outputEncoding=THREE.sRGBEncoding;ren.toneMapping=THREE.ACESFilmicToneMapping;
+document.getElementById('stage').appendChild(ren.domElement);
+/* studio environment for reflections */
+function face(t,b,soft){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),gr=g.createLinearGradient(0,0,0,128);gr.addColorStop(0,t);gr.addColorStop(1,b);g.fillStyle=gr;g.fillRect(0,0,128,128);if(soft){g.fillStyle='#fff';g.fillRect(30,18,68,90)}return c}
+const env=new THREE.CubeTexture([face('#e6eaee','#80888f',1),face('#c4cbd2','#5f666d'),face('#fff','#eef1f4'),face('#4a5057','#30343a'),face('#d3d9de','#737b83',1),face('#b4bcc4','#565d64')]);env.needsUpdate=true;env.encoding=THREE.sRGBEncoding;scene.environment=env;
+scene.add(new THREE.AmbientLight(0xffffff,.35));
+const key=new THREE.DirectionalLight(0xffffff,2.2);key.position.set(4,6,8);scene.add(key);
+const rim=new THREE.DirectionalLight(0xaec4ff,1.2);rim.position.set(-6,2,-3);scene.add(rim);
+const M=(c,m,r)=>new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:r,envMapIntensity:1.2});
+const lathe=(pts,mat)=>new THREE.Mesh(new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])),72),mat);
+const sm=p=>new THREE.SplineCurve(p.map(a=>new THREE.Vector2(a[0],a[1]))).getPoints(48).map(v=>[v.x,v.y]);
+/* pen: axis = local Y, tip at -Y */
+const pen=new THREE.Group(),spin=new THREE.Group(),barrelG=new THREE.Group(),front=new THREE.Group(),btn=new THREE.Group();
+pen.add(spin);spin.add(barrelG,front,btn);scene.add(pen);
+const bm=M(0x191c24,.7,.32);bm.side=THREE.DoubleSide;
+const steel=M(0xd0d3d8,1,.22),brass=M(0xb98d4f,1,.28),rubber=M(0x272a31,.15,.75);
+barrelG.add(lathe(sm([[.33,-.5],[.355,-.35],[.365,.3],[.365,4.5],[.35,4.72],[.28,4.82]]),bm));
+const clip=new THREE.Mesh(new THREE.BoxGeometry(.12,2.2,.035),steel);clip.position.set(0,3.6,.39);
+const bulb=new THREE.Mesh(new THREE.SphereGeometry(.06,24,16),steel);bulb.position.set(0,2.5,.4);
+const ring=new THREE.Mesh(new THREE.TorusGeometry(.368,.018,12,72),brass);ring.rotation.x=Math.PI/2;ring.position.y=.1;
+barrelG.add(clip,bulb,ring);
+const gp=[];for(let y=-.5;y>=-2.115;y-=.02)gp.push([(.385+.012*Math.sin(y*36))*(1-.05*(-.5-y)),y]);
+front.add(lathe(gp,rubber));
+const ring2=new THREE.Mesh(new THREE.TorusGeometry(.385,.03,12,72),brass);ring2.rotation.x=Math.PI/2;ring2.position.y=-.48;front.add(ring2);
+front.add(lathe(sm([[.36,-2.115],[.32,-2.215],[.22,-2.415],[.09,-2.615]]),M(0xb9bdc3,.95,.3)));
+const base=new THREE.Mesh(new THREE.CylinderGeometry(.3,.3,.12,48),brass);base.position.y=4.9;
+const capTop=new THREE.Mesh(new THREE.CylinderGeometry(.17,.19,.28,48),steel);capTop.position.y=5.04;btn.add(base,capTop);
+/* cartridge (stays in place) */
+const cart=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,5.865,32),new THREE.MeshStandardMaterial({color:0xdfe6ff,transparent:true,opacity:.4,roughness:.15,metalness:0}));cart.position.y=.6675;
+const inkC=new THREE.Mesh(new THREE.CylinderGeometry(.085,.085,4,32),M(0x141a4e,.1,.25));inkC.position.y=1;
+const ctip=new THREE.Mesh(new THREE.CylinderGeometry(.12,.03,.55,32),steel);ctip.position.y=-2.54;
+const ball=new THREE.Mesh(new THREE.SphereGeometry(.035,16,12),steel);ball.position.y=-2.835;
+spin.add(cart,inkC,ctip,ball);[barrelG,front,btn].forEach(g=>g.scale.set(.7,1,.7));
+const PT=new V(0,-2.835,0),ET=new V(0,-2.2,0);
+/* pencil with eraser: eraser at local -Y */
+const pencil=new THREE.Group(),pm=(g,m,y)=>{const o=new THREE.Mesh(g,m);o.position.y=y;pencil.add(o)};
+pm(new THREE.CylinderGeometry(.24,.24,3.4,6),M(0xe0a02e,.05,.5),.2);pm(new THREE.CylinderGeometry(.03,.24,.7,6),M(0xe9cfa4,0,.8),2.25);pm(new THREE.ConeGeometry(.045,.16,12),M(0x2b2b2b,0,.6),2.66);
+pm(new THREE.CylinderGeometry(.25,.25,.4,32),M(0xc6cacf,.95,.3),-1.6);pm(new THREE.CylinderGeometry(.23,.23,.5,32),M(0xea8f9a,0,.85),-1.95);
+pencil.visible=false;scene.add(pencil);
+/* paper: text is pre-rendered, revealed by clip while writing then erasing */
+const PW=1280,PH=800,pc=document.createElement('canvas'),tc=document.createElement('canvas');pc.width=tc.width=PW;pc.height=tc.height=PH;
+const pg=pc.getContext('2d'),paperTex=new THREE.CanvasTexture(pc);paperTex.encoding=THREE.sRGBEncoding;
+let tL=300,tW=700,ck='';
+function build(){const g=tc.getContext('2d');g.clearRect(0,0,PW,PH);let f=150;const t='Change your mind.';do{g.font='600 '+f+'px Caveat,"Segoe Script",cursive';tW=g.measureText(t).width;f-=6}while(tW>PW*.78);tL=(PW-tW)/2;g.fillStyle='#141a4e';g.fillText(t,tL,PH/2+50);ck=''}
+build();if(document.fonts&&document.fonts.load)document.fonts.load('600 100px Caveat').then(build);
+function compose(a,b){const k=a.toFixed(1)+'|'+b.toFixed(1);if(k===ck)return;ck=k;pg.fillStyle='#fdfdfb';pg.fillRect(0,0,PW,PH);pg.strokeStyle='rgba(60,80,140,.12)';pg.lineWidth=2;for(let y=210;y<PH;y+=80){pg.beginPath();pg.moveTo(0,y);pg.lineTo(PW,y);pg.stroke()}if(b>a){pg.save();pg.beginPath();pg.rect(a,0,b-a,PH);pg.clip();pg.drawImage(tc,0,0);pg.restore()}paperTex.needsUpdate=true}
+const paper=new THREE.Mesh(new THREE.PlaneGeometry(6.4,4),new THREE.MeshBasicMaterial({map:paperTex,transparent:true,toneMapped:false}));
+const shadow=new THREE.Mesh(new THREE.PlaneGeometry(6.4,4),new THREE.MeshBasicMaterial({color:0x1b2430,transparent:true}));
+paper.visible=shadow.visible=false;scene.add(shadow,paper);
+/* keyframes: [scroll, x, y, scale, tilt, camZ] */
+const KF=[[0,.5,-1.1,1,-.4,15],[1,-.5,-.4,1,0,11],[1.5,-.5,-.4,1,0,11],[2,.5,2.4,1,0,4],[2.5,.5,2.4,1,0,4],[3,-.5,1.82,1,0,5.8],[3.5,-.5,1.82,1,0,5.8]];
+function sample(s){for(let i=0;i<KF.length-1;i++){const a=KF[i],b=KF[i+1];if(s<=b[0]){const t=E(R(s,a[0],b[0]));return a.slice(1).map((v,j)=>L(v,b[j+1],t))}}return KF[KF.length-1].slice(1)}
+function tipPlace(o,lt,tg){o.position.set(0,0,0);o.updateMatrixWorld(true);const w=o.localToWorld(lt.clone());o.position.set(tg.x-w.x,tg.y-w.y,tg.z-w.z)}
+const c1=document.getElementById('c1'),c2=document.getElementById('c2'),hint=document.getElementById('hint');
+function frame(s){
+ const narrow=innerWidth<800,PX=narrow?0:1.1,wx=p=>PX+(p-PW/2)/200;
+ const k=sample(s);let px=k[0],py=k[1],sc=k[2],tl=k[3],cz=k[4];
+ px*=cz*.268*cam.aspect;if(narrow){px=0;py-=1.2}
+ const wr=E(R(s,3.5,4.3)),tw=R(s,4.3,5.1),xo=E(R(s,5.1,5.5)),pin=E(R(s,5.2,5.7)),er=R(s,5.7,6.3),pout=E(R(s,6.3,6.6)),fb=E(R(s,6.3,7));
+ const e=E(R(s,.2,.9))*(1-.85*E(R(s,2.5,3)))*(1-R(s,3.5,4));
+ paper.position.x=PX;shadow.position.set(PX+.12,-.16,-.05);
+ /* pen pose while writing */
+ pen.scale.setScalar(.7);pen.rotation.set(0,0,-.9);
+ const wob=Math.sin(tw*70)*.05+Math.sin(tw*31)*.14,lift=.6*(1-Math.min(1,tw*12)*Math.min(1,(1-tw)*12));
+ tipPlace(pen,PT,new V(wx(tL+tw*tW),-.15+wob,.03+lift));
+ const wp=pen.position.clone();
+ let X=L(px,wp.x,wr),Y=L(py,wp.y,wr),Z=L(0,wp.z,wr);sc=L(sc,.7,wr);tl=L(tl,-.9,wr);
+ X=L(X,-9,xo);Y=L(Y,3.5,xo);
+ X=L(X,0,fb);Y=L(Y,-.8,fb);Z=L(Z,0,fb);sc=L(sc,.75,fb);tl=L(tl,-.3,fb);
+ pen.position.set(X,Y,Z);pen.scale.setScalar(sc);pen.rotation.set(0,0,tl);
+ spin.rotation.y=L(s*1.1,0,wr)+fb*(s-6.3)*1.5;
+ barrelG.position.y=4.3*e;btn.position.y=5.3*e;front.position.y=-3.4*e;
+ cz=L(cz,13,wr);cz=L(cz,15,fb);cam.position.set(0,0,cz*(narrow?1.5:1));cam.lookAt(0,0,0);
+ /* pencil eraser */
+ const ea=er>0?tL-20+er*(tW+40):tL-20,ey=-.03+Math.sin(er*22)*.5;
+ pencil.scale.setScalar(.8);pencil.rotation.set(0,0,-.9);
+ tipPlace(pencil,ET,new V(L(L(11,wx(ea),pin),11,pout),L(L(4,ey,pin),4,pout),.03+.5*(1-pin)));
+ pencil.visible=pin>0&&pout<1;
+ /* paper */
+ const pa=wr*(1-fb);paper.visible=shadow.visible=pa>.01;paper.material.opacity=pa;shadow.material.opacity=.16*pa;
+ compose(er>0?ea:0,tw>=1?PW:tL+tw*tW);
+ c1.style.opacity=R(s,3.9,4.3)*(1-R(s,5,5.3));c2.style.opacity=R(s,5.5,5.8)*(1-R(s,6.3,6.6));hint.style.opacity=1-R(s,0,.3);
+}
+let target=0,smooth=0;
+function onScroll(){const m=document.documentElement.scrollHeight-innerHeight;target=m>0?scrollY/m:0}
+addEventListener('scroll',onScroll,{passive:true});
+addEventListener('resize',()=>{cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();ren.setSize(innerWidth,innerHeight)});
+onScroll();smooth=target;
+(function loop(){requestAnimationFrame(loop);smooth+=(target-smooth)*.08;frame(smooth*7);ren.render(scene,cam)})();
+</script>
+</body>
+</html>
